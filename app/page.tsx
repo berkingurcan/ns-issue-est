@@ -9,6 +9,19 @@ export default function Home() {
   const [maxBudget, setMaxBudget] = useState('');
   const [selectedModel, setSelectedModel] = useState('gpt-5-nano');
 
+  // Complexity-specific budget ranges
+  const [lowMin, setLowMin] = useState('');
+  const [lowMax, setLowMax] = useState('');
+  const [mediumMin, setMediumMin] = useState('');
+  const [mediumMax, setMediumMax] = useState('');
+  const [highMin, setHighMin] = useState('');
+  const [highMax, setHighMax] = useState('');
+  const [criticalMin, setCriticalMin] = useState('');
+  const [criticalMax, setCriticalMax] = useState('');
+
+  // Accordion state
+  const [isComplexityBudgetOpen, setIsComplexityBudgetOpen] = useState(false);
+
   const handleRepoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Repository Link:', repoLink);
@@ -26,6 +39,14 @@ export default function Home() {
           minBudget: minBudget ? Number(minBudget) : undefined,
           maxBudget: maxBudget ? Number(maxBudget) : undefined,
           model: selectedModel,
+          lowMin: lowMin ? Number(lowMin) : undefined,
+          lowMax: lowMax ? Number(lowMax) : undefined,
+          mediumMin: mediumMin ? Number(mediumMin) : undefined,
+          mediumMax: mediumMax ? Number(mediumMax) : undefined,
+          highMin: highMin ? Number(highMin) : undefined,
+          highMax: highMax ? Number(highMax) : undefined,
+          criticalMin: criticalMin ? Number(criticalMin) : undefined,
+          criticalMax: criticalMax ? Number(criticalMax) : undefined,
         }),
       });
 
@@ -81,10 +102,10 @@ export default function Home() {
               </label>
             </div>
 
-            {/* Budget Range Inputs */}
+            {/* Overall Budget Range Inputs */}
             <div className="space-y-3">
               <span className="text-sm font-semibold text-black uppercase tracking-wide">
-                Budget Range
+                Overall Budget Range
               </span>
               <div className="grid grid-cols-2 gap-4">
                 <label className="block">
@@ -95,7 +116,7 @@ export default function Home() {
                     type="number"
                     value={minBudget}
                     onChange={(e) => setMinBudget(e.target.value)}
-                    placeholder="0"
+                    placeholder="100"
                     className="mt-1 w-full px-4 py-3 bg-white border border-black focus:outline-none focus:ring-2 focus:ring-black text-black placeholder-gray-400"
                   />
                 </label>
@@ -112,6 +133,155 @@ export default function Home() {
                   />
                 </label>
               </div>
+            </div>
+
+            {/* Complexity-Specific Budget Ranges (Optional - Accordion) */}
+            <div className="border border-black">
+              <button
+                type="button"
+                onClick={() =>
+                  setIsComplexityBudgetOpen(!isComplexityBudgetOpen)
+                }
+                className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors"
+              >
+                <span className="text-sm font-semibold text-black uppercase tracking-wide">
+                  Complexity Budget Ranges (Optional)
+                </span>
+                <svg
+                  className={`w-5 h-5 transition-transform ${isComplexityBudgetOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {isComplexityBudgetOpen && (
+                <div className="p-4 space-y-4 border-t border-black">
+                  {/* Low Complexity */}
+                  <div className="space-y-2 p-4 border border-gray-300">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-black uppercase">
+                        Low
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        Simple fixes, docs, tweaks
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="number"
+                        value={lowMin}
+                        onChange={(e) => setLowMin(e.target.value)}
+                        placeholder="Min"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-black text-sm text-black placeholder-gray-400"
+                      />
+                      <input
+                        type="number"
+                        value={lowMax}
+                        onChange={(e) => setLowMax(e.target.value)}
+                        placeholder="Max"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-black text-sm text-black placeholder-gray-400"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Medium Complexity */}
+                  <div className="space-y-2 p-4 border border-gray-300">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-black uppercase">
+                        Medium
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        Enhancements, integrations, UI
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="number"
+                        value={mediumMin}
+                        onChange={(e) => setMediumMin(e.target.value)}
+                        placeholder="Min"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-black text-sm text-black placeholder-gray-400"
+                      />
+                      <input
+                        type="number"
+                        value={mediumMax}
+                        onChange={(e) => setMediumMax(e.target.value)}
+                        placeholder="Max"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-black text-sm text-black placeholder-gray-400"
+                      />
+                    </div>
+                  </div>
+
+                  {/* High Complexity */}
+                  <div className="space-y-2 p-4 border border-gray-300">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-black uppercase">
+                        High
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        Major features, architecture
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="number"
+                        value={highMin}
+                        onChange={(e) => setHighMin(e.target.value)}
+                        placeholder="Min"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-black text-sm text-black placeholder-gray-400"
+                      />
+                      <input
+                        type="number"
+                        value={highMax}
+                        onChange={(e) => setHighMax(e.target.value)}
+                        placeholder="Max"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-black text-sm text-black placeholder-gray-400"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Critical Complexity */}
+                  <div className="space-y-2 p-4 border border-gray-300">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-black uppercase">
+                        Critical
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        Overhauls, redesigns, distributed
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="number"
+                        value={criticalMin}
+                        onChange={(e) => setCriticalMin(e.target.value)}
+                        placeholder="Min"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-black text-sm text-black placeholder-gray-400"
+                      />
+                      <input
+                        type="number"
+                        value={criticalMax}
+                        onChange={(e) => setCriticalMax(e.target.value)}
+                        placeholder="Max"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 focus:outline-none focus:ring-1 focus:ring-black text-sm text-black placeholder-gray-400"
+                      />
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-500 italic">
+                    Leave empty to automatically divide the overall budget range
+                    equally across complexity levels
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="relative">

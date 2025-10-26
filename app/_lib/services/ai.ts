@@ -14,10 +14,21 @@ export interface IssueEstimation {
   url: string;
 }
 
+export interface ComplexityBudgetRange {
+  min: number;
+  max: number;
+}
+
 export interface EstimationParams {
   minBudget: number;
   maxBudget: number;
   model: string;
+  complexityBudgets?: {
+    low?: ComplexityBudgetRange;
+    medium?: ComplexityBudgetRange;
+    high?: ComplexityBudgetRange;
+    critical?: ComplexityBudgetRange;
+  };
 }
 
 
@@ -217,4 +228,66 @@ export function writeEstimationToFile(
 
   fs.writeFileSync(filepath, JSON.stringify(output, null, 2));
   console.log(`[AI] Wrote estimation to file: ${filepath}`);
+}
+
+/**
+ * Convert estimations array to CSV format
+ */
+export function convertEstimationsToCSV(
+  estimations: IssueEstimation[]
+): string {
+  // CSV header
+  const header = 'issue_number,title,complexity,estimated_cost,labels,url';
+
+  // CSV rows
+  const rows = estimations.map((est) => {
+    // Escape and quote fields that might contain commas or quotes
+    const escapeCSVField = (field: string): string => {
+      // Replace double quotes with two double quotes and wrap in quotes if contains comma, quote, or newline
+      if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+        return `"${field.replace(/"/g, '""')}"`;
+      }
+      return field;
+    };
+
+    return [
+      est.issueNumber,
+      escapeCSVField(est.title),
+      est.complexity,
+      est.estimatedCost,
+      escapeCSVField(est.labels.join('; ')),
+      est.url,
+    ].join(',');
+  });
+
+  return [header, ...rows].join('\n');
+}
+
+/**
+ * Write estimations to a CSV file
+ */
+export function writeEstimationsToCSV(
+  estimations: IssueEstimation[],
+  repoOwner: string,
+  repoName: string
+): string {
+  const outputDir = path.join(
+    process.cwd(),
+    'estimation-results',
+    `${repoOwner}_${repoName}`
+  );
+
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const filename = `estimations.csv`;
+  const filepath = path.join(outputDir, filename);
+
+  const csvContent = convertEstimationsToCSV(estimations);
+  fs.writeFileSync(filepath, csvContent);
+
+  console.log(`[AI] Wrote CSV estimations to file: ${filepath}`);
+  return filepath;
 }

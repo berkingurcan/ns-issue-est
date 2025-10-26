@@ -5,6 +5,42 @@ import { EnrichedIssue, RepoContext, formatRepoContextSummary, formatIssueSummar
  * Generate the system prompt for issue estimation
  */
 export function generateSystemPrompt(params: EstimationParams): string {
+  // Calculate budget ranges - use custom ranges if provided, otherwise divide equally
+  const calculateBudgetRanges = () => {
+    if (params.complexityBudgets?.low && params.complexityBudgets?.medium &&
+        params.complexityBudgets?.high && params.complexityBudgets?.critical) {
+      return {
+        low: params.complexityBudgets.low,
+        medium: params.complexityBudgets.medium,
+        high: params.complexityBudgets.high,
+        critical: params.complexityBudgets.critical,
+      };
+    }
+
+    // Fallback: divide equally
+    const range = params.maxBudget - params.minBudget;
+    return {
+      low: {
+        min: params.minBudget,
+        max: Math.round(params.minBudget + range * 0.25)
+      },
+      medium: {
+        min: Math.round(params.minBudget + range * 0.25),
+        max: Math.round(params.minBudget + range * 0.6)
+      },
+      high: {
+        min: Math.round(params.minBudget + range * 0.6),
+        max: Math.round(params.minBudget + range * 0.85)
+      },
+      critical: {
+        min: Math.round(params.minBudget + range * 0.85),
+        max: params.maxBudget
+      },
+    };
+  };
+
+  const budgetRanges = calculateBudgetRanges();
+
   return `You are an expert software engineering project manager specializing in cost estimation for software development tasks.
 
 Your task is to analyze GitHub issues and estimate their complexity and development cost based on these factors:
@@ -16,30 +52,30 @@ Your task is to analyze GitHub issues and estimate their complexity and developm
 
 **Complexity Categories and Budget Ranges**
 
-Given the budget range of $${params.minBudget} to $${params.maxBudget}, estimate the cost according to these complexity levels:
+Estimate the cost according to these complexity levels:
 
 - **Low**: Simple bug fixes, minor text changes, documentation updates, configuration tweaks
-  Estimate: ${params.minBudget} - ${Math.round(params.minBudget + (params.maxBudget - params.minBudget) * 0.25)} USD
+  Budget Range: $${budgetRanges.low.min} - $${budgetRanges.low.max} USD
 
 - **Medium**: Feature enhancements, moderate refactoring, standard API integrations, UI improvements
-  Estimate: ${Math.round(params.minBudget + (params.maxBudget - params.minBudget) * 0.25)} - ${Math.round(params.minBudget + (params.maxBudget - params.minBudget) * 0.6)} USD
+  Budget Range: $${budgetRanges.medium.min} - $${budgetRanges.medium.max} USD
 
 - **High**: New major features, complex integrations, architectural changes, performance optimization
-  Estimate: ${Math.round(params.minBudget + (params.maxBudget - params.minBudget) * 0.6)} - ${Math.round(params.minBudget + (params.maxBudget - params.minBudget) * 0.85)} USD
+  Budget Range: $${budgetRanges.high.min} - $${budgetRanges.high.max} USD
 
 - **Critical**: Large-scale refactoring, security overhauls, complete system redesigns, complex distributed systems
-  Estimate: ${Math.round(params.minBudget + (params.maxBudget - params.minBudget) * 0.85)} - ${params.maxBudget} USD
+  Budget Range: $${budgetRanges.critical.min} - $${budgetRanges.critical.max} USD
 
 **Instructions**
 
 1. Carefully analyze the issue details and repository context
 2. Determine the appropriate complexity category
 3. Calculate a specific cost estimate within the range for that complexity level
-4. Be realistic about the cost estimation, consider the industry open source contribution standards. 
-Be frugal. Consider the time and labour while estimating.
-5. Provide clear reasoning for your estimation (2-3 sentences)
+4. Be realistic about the cost estimation, consider the industry open source contribution standards
+5. Be frugal. Consider the time and labour while estimating
+6. Provide clear reasoning for your estimation (2-3 sentences)
 
-The estimatedCost MUST be a specific number (not a range) between $${params.minBudget} and $${params.maxBudget}.
+The estimatedCost MUST be a specific number (not a range) within the appropriate complexity level's budget range.
 
 If any required GitHub issue data is missing (such as absent labels, empty repository context,
 or incomplete issue description), include this in your reasoning, estimate based on the available data,

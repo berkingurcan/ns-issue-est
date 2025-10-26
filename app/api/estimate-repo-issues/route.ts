@@ -12,12 +12,27 @@ import {
   EstimationParams,
   IssueEstimation,
   EXAMPLE_PARAMS,
+  convertEstimationsToCSV,
+  writeEstimationsToCSV,
 } from '@/app/_lib/services/ai';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { repoLink, minBudget, maxBudget, model } = body;
+    const {
+      repoLink,
+      minBudget,
+      maxBudget,
+      model,
+      lowMin,
+      lowMax,
+      mediumMin,
+      mediumMax,
+      highMin,
+      highMax,
+      criticalMin,
+      criticalMax,
+    } = body;
 
     if (!repoLink) {
       return NextResponse.json(
@@ -32,6 +47,25 @@ export async function POST(request: Request) {
       maxBudget: maxBudget ?? EXAMPLE_PARAMS.maxBudget,
       model: model ?? EXAMPLE_PARAMS.model,
     };
+
+    // Add complexity-specific budgets if all are provided
+    if (
+      lowMin !== undefined &&
+      lowMax !== undefined &&
+      mediumMin !== undefined &&
+      mediumMax !== undefined &&
+      highMin !== undefined &&
+      highMax !== undefined &&
+      criticalMin !== undefined &&
+      criticalMax !== undefined
+    ) {
+      estimationParams.complexityBudgets = {
+        low: { min: Number(lowMin), max: Number(lowMax) },
+        medium: { min: Number(mediumMin), max: Number(mediumMax) },
+        high: { min: Number(highMin), max: Number(highMax) },
+        critical: { min: Number(criticalMin), max: Number(criticalMax) },
+      };
+    }
 
     console.log('\n=== Estimation Parameters ===');
     console.log(JSON.stringify(estimationParams, null, 2));
@@ -123,6 +157,12 @@ export async function POST(request: Request) {
       console.log(`  URL: ${est.url}`);
     });
 
+    // Generate CSV content
+    const csvContent = convertEstimationsToCSV(estimations);
+
+    // Also write to file for server-side record
+    writeEstimationsToCSV(estimations, owner, repo);
+
     return NextResponse.json({
       success: true,
       repository: { owner, repo },
@@ -131,6 +171,7 @@ export async function POST(request: Request) {
       totalIssues: allIssues.length,
       processedIssues: enrichedIssues.length,
       estimations,
+      csvContent,
       summary: {
         totalCost,
         avgCost,
