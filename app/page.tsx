@@ -11,6 +11,7 @@ export default function Home() {
   const [csvContent, setCsvContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [repoName, setRepoName] = useState<string>('');
+  const [statusLogs, setStatusLogs] = useState<string[]>([]);
 
   // Complexity-specific budget ranges
   const [lowMin, setLowMin] = useState('');
@@ -39,6 +40,10 @@ export default function Home() {
     window.URL.revokeObjectURL(url);
   };
 
+  const addLog = (message: string) => {
+    setStatusLogs((prev) => [...prev, message]);
+  };
+
   const handleRepoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Repository Link:', repoLink);
@@ -47,6 +52,11 @@ export default function Home() {
 
     setIsLoading(true);
     setCsvContent(null);
+    setStatusLogs([]);
+
+    addLog('> SYSTEM INITIALIZED');
+    addLog(`> MODEL: ${selectedModel.toUpperCase()}`);
+    addLog(`> BUDGET RANGE: $${minBudget || lowMin} - $${maxBudget || criticalMax}`);
 
     try {
       const response = await fetch('/api/estimate-repo-issues', {
@@ -67,24 +77,56 @@ export default function Home() {
           highMax: highMax ? Number(highMax) : undefined,
           criticalMin: criticalMin ? Number(criticalMin) : undefined,
           criticalMax: criticalMax ? Number(criticalMax) : undefined,
+          stream: true,
         }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        console.log(`Successfully fetched ${data.totalIssues} issues`);
-        console.log('Issues data:', data.estimations);
-        setCsvContent(data.csvContent);
-        setRepoName(`${data.repository.owner}_${data.repository.repo}`);
-      } else {
-        console.error('Error:', data.error);
-        alert(`Error: ${data.error}`);
+      if (!response.ok) {
+        throw new Error('Failed to start estimation');
       }
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'log') {
+                addLog(data.message);
+              } else if (data.type === 'complete') {
+                addLog(data.message);
+                setCsvContent(data.data.csvContent);
+                setRepoName(`${data.data.repository.owner}_${data.data.repository.repo}`);
+              } else if (data.type === 'error') {
+                addLog(`> ERROR: ${data.message.toUpperCase()}`);
+                alert(`Error: ${data.message}`);
+              }
+            } catch (e) {
+              console.error('Error parsing SSE:', e);
+            }
+          }
+        }
+      }
+
+      setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
+      addLog('> FATAL ERROR: CONNECTION FAILED');
       alert('Failed to fetch and estimate issues. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -347,23 +389,45 @@ export default function Home() {
               </label>
             </form>
 
+            {/* Status Log */}
+            {statusLogs.length > 0 && (
+              <div className="border border-cyan-500 bg-black p-4 font-mono text-xs max-h-64 overflow-y-auto">
+                <div className="space-y-1">
+                  {statusLogs.map((log, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="text-cyan-500 flex-shrink-0">
+                        {index === statusLogs.length - 1 && isLoading ? '█' : '›'}
+                      </span>
+                      <span className="text-cyan-400">{log}</span>
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-cyan-500 animate-pulse">█</span>
+                      <span className="text-cyan-400 animate-pulse">PROCESSING...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* CSV Download Button */}
             {csvContent && (
-              <div className="border border-green-600 bg-green-50 p-4">
+              <div className="border border-green-500 bg-black p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-green-900 uppercase tracking-wide">
-                      Estimation Complete!
+                    <p className="text-sm font-semibold text-green-400 uppercase tracking-wide font-mono">
+                      [ ESTIMATION COMPLETE ]
                     </p>
-                    <p className="text-xs text-green-700">
-                      Your CSV file is ready to download
+                    <p className="text-xs text-green-500 font-mono">
+                      CSV FILE READY
                     </p>
                   </div>
                   <button
                     onClick={handleDownloadCSV}
-                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium uppercase text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-green-600"
+                    className="px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-bold uppercase text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 font-mono"
                   >
-                    Download CSV
+                    DOWNLOAD
                   </button>
                 </div>
               </div>
