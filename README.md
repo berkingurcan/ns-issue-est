@@ -68,7 +68,7 @@ GitHub Issue Estimator scans GitHub repositories and automatically generates cos
 
 ## 🚀 Demo
 
-**Hosted App**: [Add your Vercel URL here]
+**Hosted App**: [https://ns-issue-est.vercel.app/](https://ns-issue-est.vercel.app/)
 
 ## 🏁 Getting Started
 
