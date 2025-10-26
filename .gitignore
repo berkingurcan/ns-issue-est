@@ -43,3 +43,6 @@ yarn-error.log*
 next-env.d.ts
 
 IMPLEMENTATION_PLAN.md
+
+# LLM output files
+/llm-outputs/
