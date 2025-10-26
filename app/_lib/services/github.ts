@@ -382,6 +382,12 @@ export function writeFormattedLLMOutput(
   issue: EnrichedIssue,
   baseDir: string = process.cwd()
 ): void {
+  // Skip file writing in production
+  if (process.env.NODE_ENV === 'production') {
+    logger.debug({ issueNumber: issue.number }, 'Skipping file write in production');
+    return;
+  }
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const repoName = repoContext.name;
   const issueNumber = issue.number;

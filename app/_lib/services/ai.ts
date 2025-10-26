@@ -228,6 +228,12 @@ export function writeEstimationToFile(
   repoOwner: string,
   repoName: string
 ): void {
+  // Skip file writing in production
+  if (process.env.NODE_ENV === 'production') {
+    logger.debug({ issueNumber: estimation.issueNumber }, 'Skipping file write in production');
+    return;
+  }
+
   const outputDir = path.join(
     process.cwd(),
     'estimation-results',
@@ -299,6 +305,12 @@ export function writeEstimationsToCSV(
   repoOwner: string,
   repoName: string
 ): string {
+  // Skip file writing in production
+  if (process.env.NODE_ENV === 'production') {
+    logger.debug({ repoOwner, repoName }, 'Skipping CSV file write in production');
+    return '';
+  }
+
   const outputDir = path.join(
     process.cwd(),
     'estimation-results',
