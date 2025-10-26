@@ -1,6 +1,5 @@
 export const config = {
   github: {
-    apiKey: process.env.GITHUB_API_KEY || '',
     token: process.env.GITHUB_TOKEN || '',
   },
   openai: {
