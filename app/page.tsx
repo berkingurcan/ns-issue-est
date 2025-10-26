@@ -131,12 +131,64 @@ export default function Home() {
     }
   };
 
-  const handleIssueSubmit = (e: React.FormEvent) => {
+  const handleIssueSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Issue Link:', issueLink);
     console.log('Budget Range:', { min: minBudget, max: maxBudget });
     console.log('Selected Model:', selectedModel);
-    // Add your submit logic here
+
+    setIsLoading(true);
+    setStatusLogs([]);
+    setCsvContent(null);
+
+    addLog('> SYSTEM INITIALIZED');
+    addLog(`> MODEL: ${selectedModel.toUpperCase()}`);
+    addLog(`> ANALYZING SINGLE ISSUE`);
+
+    try {
+      addLog('> FETCHING ISSUE DATA...');
+
+      const response = await fetch('/api/estimate-issue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          issueLink,
+          minBudget: minBudget ? Number(minBudget) : undefined,
+          maxBudget: maxBudget ? Number(maxBudget) : undefined,
+          model: selectedModel,
+          lowMin: lowMin ? Number(lowMin) : undefined,
+          lowMax: lowMax ? Number(lowMax) : undefined,
+          mediumMin: mediumMin ? Number(mediumMin) : undefined,
+          mediumMax: mediumMax ? Number(mediumMax) : undefined,
+          highMin: highMin ? Number(highMin) : undefined,
+          highMax: highMax ? Number(highMax) : undefined,
+          criticalMin: criticalMin ? Number(criticalMin) : undefined,
+          criticalMax: criticalMax ? Number(criticalMax) : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to estimate issue');
+      }
+
+      const data = await response.json();
+
+      addLog('> ESTIMATION COMPLETE');
+      addLog(`> ISSUE #${data.estimation.issueNumber}: ${data.estimation.title}`);
+      addLog(`> COMPLEXITY: ${data.estimation.complexity.toUpperCase()}`);
+      addLog(`> ESTIMATED COST: $${data.estimation.estimatedCost}`);
+      addLog(`> REASONING: ${data.estimation.reasoning}`);
+
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Failed to estimate issue:', error);
+      addLog('> FATAL ERROR: ' + (error instanceof Error ? error.message.toUpperCase() : 'UNKNOWN ERROR'));
+      alert('Failed to estimate issue. Please check the issue URL and try again.');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -457,12 +509,14 @@ export default function Home() {
                     onChange={(e) => setIssueLink(e.target.value)}
                     placeholder="github.com/username/repository/issues/123"
                     className="flex-1 px-4 py-3 bg-white border border-black focus:outline-none focus:ring-2 focus:ring-black text-black placeholder-gray-400"
+                    disabled={isLoading}
                   />
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-black hover:bg-gray-800 text-white font-medium uppercase text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-black"
+                    disabled={isLoading}
+                    className="px-6 py-3 bg-black hover:bg-gray-800 text-white font-medium uppercase text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    Submit
+                    {isLoading ? 'Processing...' : 'Submit'}
                   </button>
                 </div>
               </label>
