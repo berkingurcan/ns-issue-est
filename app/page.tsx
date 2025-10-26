@@ -7,11 +7,13 @@ export default function Home() {
   const [issueLink, setIssueLink] = useState("");
   const [minBudget, setMinBudget] = useState("");
   const [maxBudget, setMaxBudget] = useState("");
+  const [selectedModel, setSelectedModel] = useState("gpt-5-nano");
 
   const handleRepoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Repository Link:", repoLink);
     console.log("Budget Range:", { min: minBudget, max: maxBudget });
+    console.log("Selected Model:", selectedModel);
     // Add your submit logic here
   };
 
@@ -19,6 +21,7 @@ export default function Home() {
     e.preventDefault();
     console.log("Issue Link:", issueLink);
     console.log("Budget Range:", { min: minBudget, max: maxBudget });
+    console.log("Selected Model:", selectedModel);
     // Add your submit logic here
   };
 
@@ -36,6 +39,25 @@ export default function Home() {
           </div>
 
           <div className="space-y-6">
+            {/* Model Selection */}
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-sm font-semibold text-black uppercase tracking-wide">
+                  OpenAI Model
+                </span>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="mt-2 w-full px-4 py-3 bg-white border border-black focus:outline-none focus:ring-2 focus:ring-black text-black"
+                >
+                  <option value="gpt-5">GPT-5</option>
+                  <option value="gpt-5-mini">GPT-5 Mini</option>
+                  <option value="gpt-5-nano">GPT-5 Nano</option>
+                  <option value="gpt-4.1">GPT-4.1</option>
+                </select>
+              </label>
+            </div>
+
             {/* Budget Range Inputs */}
             <div className="space-y-3">
               <span className="text-sm font-semibold text-black uppercase tracking-wide">
