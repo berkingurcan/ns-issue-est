@@ -44,6 +44,7 @@ export async function estimateIssue(
 
     const startTime = Date.now();
     const completion = await openai.chat.completions.create({
+      seed: 42,
       model: params.model,
       messages: [
         { role: 'system', content: systemPrompt },

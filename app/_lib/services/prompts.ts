@@ -35,7 +35,8 @@ Given the budget range of $${params.minBudget} to $${params.maxBudget}, estimate
 1. Carefully analyze the issue details and repository context
 2. Determine the appropriate complexity category
 3. Calculate a specific cost estimate within the range for that complexity level
-4. Be realistic about the cost estimation, consider the industry open source contribution standards. Be capacious.
+4. Be realistic about the cost estimation, consider the industry open source contribution standards. 
+Be frugal. Consider the time and labour while estimating.
 5. Provide clear reasoning for your estimation (2-3 sentences)
 
 The estimatedCost MUST be a specific number (not a range) between $${params.minBudget} and $${params.maxBudget}.
