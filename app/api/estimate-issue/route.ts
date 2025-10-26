@@ -11,6 +11,7 @@ import {
 } from '@/app/_lib/services/ai';
 import { Octokit } from 'octokit';
 import logger from '@/app/_lib/utils/logger';
+import { checkRateLimit } from '@/app/_lib/middleware/rateLimit';
 
 function parseGitHubIssueUrl(issueLink: string): { owner: string; repo: string; issueNumber: number } | null {
   let normalized = issueLink.trim();
@@ -32,6 +33,11 @@ function parseGitHubIssueUrl(issueLink: string): { owner: string; repo: string; 
 }
 
 export async function POST(request: Request) {
+  const rateLimitResponse = await checkRateLimit(request);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const {

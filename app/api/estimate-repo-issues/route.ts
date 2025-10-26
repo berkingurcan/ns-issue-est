@@ -16,6 +16,7 @@ import {
   writeEstimationsToCSV,
 } from '@/app/_lib/services/ai';
 import logger from '@/app/_lib/utils/logger';
+import { checkRateLimit } from '@/app/_lib/middleware/rateLimit';
 
 // Helper to send server-sent events
 function createStreamResponse() {
@@ -41,6 +42,11 @@ function createStreamResponse() {
 }
 
 export async function POST(request: Request) {
+  const rateLimitResponse = await checkRateLimit(request);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const {
