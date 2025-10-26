@@ -8,6 +8,9 @@ export default function Home() {
   const [minBudget, setMinBudget] = useState('');
   const [maxBudget, setMaxBudget] = useState('');
   const [selectedModel, setSelectedModel] = useState('gpt-5-nano');
+  const [csvContent, setCsvContent] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [repoName, setRepoName] = useState<string>('');
 
   // Complexity-specific budget ranges
   const [lowMin, setLowMin] = useState('');
@@ -22,11 +25,28 @@ export default function Home() {
   // Accordion state
   const [isComplexityBudgetOpen, setIsComplexityBudgetOpen] = useState(false);
 
+  const handleDownloadCSV = () => {
+    if (!csvContent || !repoName) return;
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${repoName}-issue-estimations.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleRepoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Repository Link:', repoLink);
     console.log('Budget Range:', { min: minBudget, max: maxBudget });
     console.log('Selected Model:', selectedModel);
+
+    setIsLoading(true);
+    setCsvContent(null);
 
     try {
       const response = await fetch('/api/estimate-repo-issues', {
@@ -54,12 +74,18 @@ export default function Home() {
 
       if (data.success) {
         console.log(`Successfully fetched ${data.totalIssues} issues`);
-        console.log('Issues data:', data.issues);
+        console.log('Issues data:', data.estimations);
+        setCsvContent(data.csvContent);
+        setRepoName(`${data.repository.owner}_${data.repository.repo}`);
       } else {
         console.error('Error:', data.error);
+        alert(`Error: ${data.error}`);
       }
     } catch (error) {
       console.error('Failed to fetch issues:', error);
+      alert('Failed to fetch and estimate issues. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -308,16 +334,40 @@ export default function Home() {
                     onChange={(e) => setRepoLink(e.target.value)}
                     placeholder="github.com/username/repository"
                     className="flex-1 px-4 py-3 bg-white border border-black focus:outline-none focus:ring-2 focus:ring-black text-black placeholder-gray-400"
+                    disabled={isLoading}
                   />
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-black hover:bg-gray-800 text-white font-medium uppercase text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-black"
+                    disabled={isLoading}
+                    className="px-6 py-3 bg-black hover:bg-gray-800 text-white font-medium uppercase text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    Submit
+                    {isLoading ? 'Processing...' : 'Submit'}
                   </button>
                 </div>
               </label>
             </form>
+
+            {/* CSV Download Button */}
+            {csvContent && (
+              <div className="border border-green-600 bg-green-50 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-green-900 uppercase tracking-wide">
+                      Estimation Complete!
+                    </p>
+                    <p className="text-xs text-green-700">
+                      Your CSV file is ready to download
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleDownloadCSV}
+                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium uppercase text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-green-600"
+                  >
+                    Download CSV
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

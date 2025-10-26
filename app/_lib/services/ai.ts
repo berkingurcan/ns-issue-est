@@ -237,7 +237,7 @@ export function convertEstimationsToCSV(
   estimations: IssueEstimation[]
 ): string {
   // CSV header
-  const header = 'issue_number,title,complexity,estimated_cost,labels,url';
+  const header = 'issue_number,title,complexity,estimated_cost,labels,reasoning,url';
 
   // CSV rows
   const rows = estimations.map((est) => {
@@ -256,6 +256,7 @@ export function convertEstimationsToCSV(
       est.complexity,
       est.estimatedCost,
       escapeCSVField(est.labels.join('; ')),
+      escapeCSVField(est.reasoning),
       est.url,
     ].join(',');
   });
