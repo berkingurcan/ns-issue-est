@@ -385,58 +385,6 @@ ns-issue-est/
 └── README.md                  # This file
 ```
 
-### Data Flow
-
-#### Repository Analysis Flow
-```
-User Input (Repo URL + Config)
-    ↓
-Frontend (page.tsx)
-    ↓
-POST /api/estimate-repo-issues
-    ↓
-GitHub Service
-  ├── Parse URL
-  ├── Fetch repo context (languages, metadata)
-  ├── Fetch all open issues (paginated)
-  └── Enrich issues with comments
-    ↓
-AI Service
-  ├── Batch issues (5 at a time)
-  ├── Format prompts with context
-  ├── Call OpenAI API
-  └── Parse structured responses
-    ↓
-CSV Generation
-    ↓
-Stream progress updates (SSE)
-    ↓
-Return CSV + summary data
-    ↓
-Frontend displays results + download button
-```
-
-#### Single Issue Flow
-```
-User Input (Issue URL + Config)
-    ↓
-Frontend (page.tsx)
-    ↓
-POST /api/estimate-issue
-    ↓
-GitHub Service
-  ├── Parse issue URL
-  ├── Fetch specific issue
-  ├── Fetch repo context
-  └── Enrich with comments
-    ↓
-AI Service
-  └── Estimate single issue
-    ↓
-Return estimation data
-    ↓
-Frontend displays results in logs
-```
 
 ### AI Estimation Logic
 
@@ -486,44 +434,6 @@ issue_number,title,complexity,estimated_cost,labels,url,reasoning
 3,Update API documentation,low,100,documentation,https://github.com/owner/repo/issues/3,Documentation update with clear scope
 ```
 
-## 🚀 Deployment
-
-### Deploy to Vercel (Recommended)
-
-1. **Push to GitHub**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin https://github.com/yourusername/ns-issue-est.git
-   git push -u origin main
-   ```
-
-2. **Import to Vercel**
-   - Go to [Vercel Dashboard](https://vercel.com/new)
-   - Import your GitHub repository
-   - Configure environment variables:
-     - `GITHUB_TOKEN`
-     - `OPENAI_API_KEY`
-
-3. **Deploy**
-   - Click "Deploy"
-   - Vercel will automatically build and deploy your app
-   - You'll receive a production URL (e.g., `https://your-app.vercel.app`)
-
-4. **Update README**
-   - Add your deployed URL to the [Demo](#demo) section
-
-### Manual Deployment
-
-```bash
-# Build the production application
-npm run build
-
-# Start the production server
-npm start
-```
-
 ## 🛠️ Development
 
 ### Available Scripts
@@ -566,15 +476,6 @@ Contributions are welcome! Please follow these steps:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [Next.js](https://nextjs.org)
-- AI powered by [OpenAI](https://openai.com)
-- GitHub API via [Octokit](https://github.com/octokit/octokit.js)
 
 ---
 
