@@ -36,9 +36,7 @@ export async function POST(request: Request) {
 
     const issuesToEnrich = allIssues;
     const enrichedIssues = await Promise.all(
-      issuesToEnrich.map((issue) =>
-        enrichIssueWithComments(owner, repo, issue)
-      )
+      issuesToEnrich.map((issue) => enrichIssueWithComments(owner, repo, issue))
     );
 
     // Step 4: Format data for LLM estimation and write to files

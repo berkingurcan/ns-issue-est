@@ -343,7 +343,8 @@ ${
 All Comments (${issue.comments.length}):
 ${issue.comments
   .map(
-    (c) => `- ${c.author} (${new Date(c.createdAt).toLocaleDateString()}): ${c.body}`
+    (c) =>
+      `- ${c.author} (${new Date(c.createdAt).toLocaleDateString()}): ${c.body}`
   )
   .join('\n')}`
     : 'No comments'

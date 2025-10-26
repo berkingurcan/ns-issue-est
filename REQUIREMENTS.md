@@ -16,7 +16,7 @@ You enter a GitHub repo URL (for example, https://github.com/org/project), and t
     Uses AI to analyze each issue’s description, labels, and comments to estimate complexity and assign a task cost (for example, $100–$1000).
     Outputs a CSV file containing:
 
-issue_number	title	complexity	estimated_cost	labels	url
+issue_number title complexity estimated_cost labels url
 
 Each row should include the direct GitHub link to the issue.
 
