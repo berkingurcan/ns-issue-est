@@ -1,6 +1,7 @@
 import { Octokit } from 'octokit';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import logger from '@/app/_lib/utils/logger';
 
 interface RepoInfo {
   owner: string;
@@ -78,14 +79,14 @@ export async function fetchAllOpenIssues(owner: string, repo: string) {
     auth: process.env.GITHUB_TOKEN,
   });
 
-  console.log(`Fetching all open issues for ${owner}/${repo}...`);
+  logger.info({ owner, repo }, 'Fetching all open issues');
 
   const allIssues = [];
   let page = 1;
   const perPage = 100;
 
   while (true) {
-    console.log(`Fetching page ${page}...`);
+    logger.debug({ page }, 'Fetching issues page');
 
     const response = await octokit.rest.issues.listForRepo({
       owner,
@@ -102,7 +103,7 @@ export async function fetchAllOpenIssues(owner: string, repo: string) {
 
     allIssues.push(...actualIssues);
 
-    console.log(`Page ${page}: Found ${actualIssues.length} issues`);
+    logger.debug({ page, issuesFound: actualIssues.length }, 'Issues fetched from page');
 
     // If we got less than perPage items, we've reached the end
     if (issues.length < perPage) {
@@ -112,9 +113,8 @@ export async function fetchAllOpenIssues(owner: string, repo: string) {
     page++;
   }
 
-  console.log(`\nTotal open issues fetched: ${allIssues.length}`);
-  console.log('\n=== All Issues Data ===');
-  console.log(JSON.stringify(allIssues, null, 2));
+  logger.info({ totalIssues: allIssues.length }, 'Total open issues fetched');
+  logger.trace({ issues: allIssues }, 'All issues data');
 
   return allIssues;
 }
@@ -127,7 +127,7 @@ export async function fetchRepoContext(
     auth: process.env.GITHUB_TOKEN,
   });
 
-  console.log(`Fetching repository context for ${owner}/${repo}...`);
+  logger.info({ owner, repo }, 'Fetching repository context');
 
   // Fetch repository metadata
   const repoResponse = await octokit.rest.repos.get({
@@ -173,7 +173,7 @@ export async function fetchRepoContext(
     license: repoData.license?.name || null,
   };
 
-  console.log('Repository context fetched successfully');
+  logger.info({ context }, 'Repository context fetched successfully');
   return context;
 }
 
@@ -262,18 +262,33 @@ export async function fetchIssueComments(
   return allComments;
 }
 
+interface GitHubIssue {
+  number: number;
+  title: string;
+  body?: string | null;
+  labels: Array<string | { name?: string }>;
+  state: string;
+  created_at: string;
+  updated_at: string;
+  comments: number;
+  html_url: string;
+  user?: { login: string } | null;
+}
+
 export async function enrichIssueWithComments(
   owner: string,
   repo: string,
-  issue: any
+  issue: GitHubIssue
 ): Promise<EnrichedIssue> {
   const comments = await fetchIssueComments(owner, repo, issue.number);
 
   return {
     number: issue.number,
     title: issue.title,
-    body: issue.body,
-    labels: issue.labels.map((label: any) => label.name),
+    body: issue.body ?? null,
+    labels: issue.labels.map((label) =>
+      typeof label === 'string' ? label : (label.name ?? '')
+    ),
     state: issue.state,
     createdAt: issue.created_at,
     updatedAt: issue.updated_at,
@@ -385,7 +400,7 @@ export function writeFormattedLLMOutput(
     `${repoName}-issue-${issueNumber}-${timestamp}.json`
   );
   writeFileSync(jsonPath, JSON.stringify(jsonOutput, null, 2));
-  console.log(`Written JSON output to: ${jsonPath}`);
+  logger.debug({ path: jsonPath }, 'Written JSON output');
 
   // Write as formatted text/markdown
   const textOutput = formatFullLLMPromptData(repoContext, issue);
@@ -394,5 +409,5 @@ export function writeFormattedLLMOutput(
     `${repoName}-issue-${issueNumber}-${timestamp}.md`
   );
   writeFileSync(textPath, textOutput);
-  console.log(`Written formatted text output to: ${textPath}`);
+  logger.debug({ path: textPath }, 'Written formatted text output');
 }

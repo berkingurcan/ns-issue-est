@@ -196,7 +196,7 @@ export default function Home() {
       <main className="w-full max-w-2xl">
         <div className="border border-black p-8 space-y-8">
           <div className="text-center space-y-2">
-            <h1 className="text-4xl font-bold text-black">GitHub Analyzer</h1>
+            <h1 className="text-4xl font-bold text-black">GitHub Issue Analyzer</h1>
             <p className="text-gray-700">
               Enter a repository or issue link to get started
             </p>

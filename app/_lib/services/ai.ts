@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { EnrichedIssue, RepoContext } from './github';
 import { generateSystemPrompt, generateUserPrompt } from './prompts';
+import logger from '@/app/_lib/utils/logger';
 
 export interface IssueEstimation {
   issueNumber: number;
@@ -49,8 +50,9 @@ export async function estimateIssue(
   const userPrompt = generateUserPrompt(repoContext, issue);
 
   try {
-    console.log(
-      `[AI] Estimating issue #${issue.number}: ${issue.title.substring(0, 50)}...`
+    logger.info(
+      { issueNumber: issue.number, title: issue.title.substring(0, 50) },
+      'Estimating issue with AI'
     );
 
     const startTime = Date.now();
@@ -72,16 +74,25 @@ export async function estimateIssue(
 
     const estimation = JSON.parse(responseContent);
 
-    // Log the estimation result
-    console.log(
-      `[AI] Issue #${issue.number} | Complexity: ${estimation.complexity} | Cost: $${estimation.estimatedCost} | Duration: ${duration}ms`
+    logger.info(
+      {
+        issueNumber: issue.number,
+        complexity: estimation.complexity,
+        estimatedCost: estimation.estimatedCost,
+        duration,
+      },
+      'AI estimation completed'
     );
-    console.log(`[AI] Reasoning: ${estimation.reasoning}`);
+    logger.debug({ reasoning: estimation.reasoning }, 'Estimation reasoning');
 
-    // Log token usage if available
     if (completion.usage) {
-      console.log(
-        `[AI] Tokens - Prompt: ${completion.usage.prompt_tokens} | Completion: ${completion.usage.completion_tokens} | Total: ${completion.usage.total_tokens}`
+      logger.debug(
+        {
+          promptTokens: completion.usage.prompt_tokens,
+          completionTokens: completion.usage.completion_tokens,
+          totalTokens: completion.usage.total_tokens,
+        },
+        'Token usage'
       );
     }
 
@@ -102,7 +113,10 @@ export async function estimateIssue(
 
     return result;
   } catch (error) {
-    console.error(`[AI] Error estimating issue #${issue.number}:`, error);
+    logger.error(
+      { error, issueNumber: issue.number },
+      'Error estimating issue with AI'
+    );
     throw new Error(
       `Failed to estimate issue #${issue.number}: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
@@ -126,8 +140,9 @@ export async function estimateIssuesBatch(
   const estimations: IssueEstimation[] = [];
   const batchSize = 5; // Process 5 issues at a time
 
-  console.log(
-    `[AI Batch] Starting batch estimation of ${issues.length} issues (batch size: ${batchSize})`
+  logger.info(
+    { totalIssues: issues.length, batchSize },
+    'Starting batch estimation'
   );
   const batchStartTime = Date.now();
 
@@ -136,8 +151,13 @@ export async function estimateIssuesBatch(
     const batchNumber = Math.floor(i / batchSize) + 1;
     const totalBatches = Math.ceil(issues.length / batchSize);
 
-    console.log(
-      `[AI Batch] Processing batch ${batchNumber}/${totalBatches} (issues ${i + 1}-${Math.min(i + batchSize, issues.length)})`
+    logger.info(
+      {
+        batchNumber,
+        totalBatches,
+        issueRange: `${i + 1}-${Math.min(i + batchSize, issues.length)}`,
+      },
+      'Processing batch'
     );
 
     // Process batch in parallel
@@ -159,14 +179,21 @@ export async function estimateIssuesBatch(
       options.onProgress(currentCount, issues.length);
     }
 
-    console.log(
-      `[AI Batch] Completed batch ${batchNumber}/${totalBatches} (${currentCount}/${issues.length} total)`
+    logger.info(
+      {
+        batchNumber,
+        totalBatches,
+        currentCount,
+        totalIssues: issues.length,
+      },
+      'Completed batch'
     );
   }
 
   const totalDuration = Date.now() - batchStartTime;
-  console.log(
-    `[AI Batch] Completed all estimations in ${(totalDuration / 1000).toFixed(2)}s`
+  logger.info(
+    { totalDuration, durationSeconds: (totalDuration / 1000).toFixed(2) },
+    'Completed all estimations'
   );
 
   return estimations;
@@ -227,7 +254,7 @@ export function writeEstimationToFile(
   };
 
   fs.writeFileSync(filepath, JSON.stringify(output, null, 2));
-  console.log(`[AI] Wrote estimation to file: ${filepath}`);
+  logger.debug({ filepath }, 'Wrote estimation to file');
 }
 
 /**
@@ -289,6 +316,6 @@ export function writeEstimationsToCSV(
   const csvContent = convertEstimationsToCSV(estimations);
   fs.writeFileSync(filepath, csvContent);
 
-  console.log(`[AI] Wrote CSV estimations to file: ${filepath}`);
+  logger.info({ filepath, count: estimations.length }, 'Wrote CSV estimations to file');
   return filepath;
 }

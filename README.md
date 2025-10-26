@@ -299,6 +299,30 @@ Analyzes a single GitHub issue.
 | `OPENAI_API_KEY` | Yes | OpenAI API key for AI estimations |
 | `NODE_ENV` | No | Environment mode (development/production) |
 | `PORT` | No | Server port (default: 3000) |
+| `LOG_LEVEL` | No | Logging level: `trace`, `debug`, `info`, `warn`, `error`, `fatal` (default: `info`) |
+
+### Logging
+
+The application uses [Pino](https://getpino.io/) for structured logging with the following features:
+
+- **Structured JSON Logs**: All logs include contextual data as JSON objects
+- **Configurable Log Levels**: Set via `LOG_LEVEL` environment variable
+- **Server-side Only**: Logging is configured for Node.js server environment
+- **Performance**: Pino is one of the fastest Node.js loggers
+
+**Log Levels (from most to least verbose):**
+- `trace`: Very detailed debugging information
+- `debug`: Detailed debugging information (LLM prompts, token usage)
+- `info`: General informational messages (default)
+- `warn`: Warning messages
+- `error`: Error messages
+- `fatal`: Critical errors that cause application failure
+
+**Example log output:**
+```json
+{"level":"info","time":1234567890,"owner":"facebook","repo":"react","msg":"Fetching repository context"}
+{"level":"info","time":1234567891,"totalIssues":25,"msg":"Total open issues fetched"}
+```
 
 ### Budget Configuration
 

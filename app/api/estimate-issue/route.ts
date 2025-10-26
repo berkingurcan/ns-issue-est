@@ -10,6 +10,7 @@ import {
   EXAMPLE_PARAMS,
 } from '@/app/_lib/services/ai';
 import { Octokit } from 'octokit';
+import logger from '@/app/_lib/utils/logger';
 
 function parseGitHubIssueUrl(issueLink: string): { owner: string; repo: string; issueNumber: number } | null {
   let normalized = issueLink.trim();
@@ -89,9 +90,7 @@ export async function POST(request: Request) {
       };
     }
 
-    console.log('\n=== Fetching Issue ===');
-    console.log(`Repository: ${owner}/${repo}`);
-    console.log(`Issue Number: ${issueNumber}`);
+    logger.info({ owner, repo, issueNumber }, 'Fetching issue');
 
     const octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN,
@@ -112,24 +111,24 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('\n=== Fetching Repository Context ===');
+    logger.info('Fetching repository context');
     const repoContext = await fetchRepoContext(owner, repo);
 
-    console.log('\n=== Enriching Issue Data ===');
+    logger.info('Enriching issue data');
     const enrichedIssue = await enrichIssueWithComments(owner, repo, issue);
 
-    console.log('\n=== Formatting Data for LLM ===');
+    logger.info('Formatting data for LLM');
     const llmPromptData = formatFullLLMPromptData(repoContext, enrichedIssue);
-    console.log(llmPromptData);
+    logger.debug({ llmPromptData }, 'LLM prompt data formatted');
 
-    console.log('\n=== Starting AI Estimation ===');
+    logger.info('Starting AI estimation');
     const estimations = await estimateIssuesBatch(
       repoContext,
       [enrichedIssue],
       estimationParams,
       {
         onProgress: (current, total) => {
-          console.log(`Progress: ${current}/${total} issues estimated`);
+          logger.info({ current, total }, 'Estimation progress');
         },
         saveToFile: false,
       }
@@ -137,11 +136,16 @@ export async function POST(request: Request) {
 
     const estimation = estimations[0];
 
-    console.log('\n=== Estimation Result ===');
-    console.log(`Issue #${estimation.issueNumber}: ${estimation.title}`);
-    console.log(`Complexity: ${estimation.complexity}`);
-    console.log(`Estimated Cost: $${estimation.estimatedCost}`);
-    console.log(`Reasoning: ${estimation.reasoning}`);
+    logger.info(
+      {
+        issueNumber: estimation.issueNumber,
+        title: estimation.title,
+        complexity: estimation.complexity,
+        estimatedCost: estimation.estimatedCost,
+      },
+      'Estimation complete'
+    );
+    logger.debug({ reasoning: estimation.reasoning }, 'Estimation reasoning');
 
     return NextResponse.json({
       success: true,
@@ -150,7 +154,7 @@ export async function POST(request: Request) {
       message: `Successfully estimated issue #${issueNumber}`,
     });
   } catch (error: unknown) {
-    console.error('Error estimating issue:', error);
+    logger.error({ error }, 'Error estimating issue');
     return NextResponse.json(
       {
         error:

@@ -15,6 +15,7 @@ import {
   convertEstimationsToCSV,
   writeEstimationsToCSV,
 } from '@/app/_lib/services/ai';
+import logger from '@/app/_lib/utils/logger';
 
 // Helper to send server-sent events
 function createStreamResponse() {
@@ -231,8 +232,7 @@ export async function POST(request: Request) {
       };
     }
 
-    console.log('\n=== Estimation Parameters ===');
-    console.log(JSON.stringify(estimationParams, null, 2));
+    logger.info({ estimationParams }, 'Estimation parameters configured');
 
     const repoInfo = parseGitHubRepoUrl(repoLink);
     if (!repoInfo) {
@@ -244,30 +244,27 @@ export async function POST(request: Request) {
 
     const { owner, repo } = repoInfo;
 
+    logger.info({ owner, repo }, 'Fetching repository context');
     const repoContext = await fetchRepoContext(owner, repo);
 
+    logger.info('Fetching all open issues');
     const allIssues = await fetchAllOpenIssues(owner, repo);
 
     const issuesToEnrich = allIssues;
+    logger.info({ count: issuesToEnrich.length }, 'Enriching issues with comments');
     const enrichedIssues = await Promise.all(
       issuesToEnrich.map((issue) => enrichIssueWithComments(owner, repo, issue))
     );
 
-    // Step 4: Format data for LLM estimation and write to files
-    console.log('\n=== Formatting Data for LLM ===');
+    logger.info('Formatting data for LLM');
     enrichedIssues.forEach((issue) => {
-      console.log(`\n--- Issue #${issue.number} LLM Input Format ---`);
+      logger.debug({ issueNumber: issue.number }, 'Formatting issue for LLM');
       const llmPromptData = formatFullLLMPromptData(repoContext, issue);
-      console.log(llmPromptData);
-      console.log('\n--- End of Issue ---\n');
-
-      // Write formatted output to files
+      logger.trace({ llmPromptData }, 'LLM prompt data');
       writeFormattedLLMOutput(repoContext, issue);
     });
 
-    // Step 5: Estimate issues using AI
-    console.log('\n=== Starting AI Estimation ===');
-    console.log(`Estimating ${enrichedIssues.length} issues...`);
+    logger.info({ count: enrichedIssues.length }, 'Starting AI estimation');
 
     const estimations: IssueEstimation[] = await estimateIssuesBatch(
       repoContext,
@@ -275,18 +272,12 @@ export async function POST(request: Request) {
       estimationParams,
       {
         onProgress: (current, total) => {
-          console.log(`Progress: ${current}/${total} issues estimated`);
+          logger.info({ current, total }, 'Estimation progress');
         },
         saveToFile: true,
         repoOwner: owner,
         repoName: repo,
       }
-    );
-
-    // Step 6: Log estimation results
-    console.log('\n=== AI Estimation Results ===');
-    console.log(
-      `Total Issues Estimated: ${estimations.length} | Budget Range: $${estimationParams.minBudget} - $${estimationParams.maxBudget}`
     );
 
     const totalCost = estimations.reduce(
@@ -303,22 +294,30 @@ export async function POST(request: Request) {
       {} as Record<string, number>
     );
 
-    console.log('\n--- Summary Statistics ---');
-    console.log(`Total Estimated Cost: $${totalCost.toFixed(2)}`);
-    console.log(`Average Cost per Issue: $${avgCost.toFixed(2)}`);
-    console.log('Complexity Distribution:');
-    Object.entries(complexityCounts).forEach(([complexity, count]) => {
-      console.log(`  ${complexity}: ${count} issues`);
-    });
+    logger.info(
+      {
+        totalIssues: estimations.length,
+        budgetRange: `$${estimationParams.minBudget} - $${estimationParams.maxBudget}`,
+        totalCost,
+        avgCost,
+        complexityCounts,
+      },
+      'AI estimation results'
+    );
 
-    console.log('\n--- Detailed Estimations ---');
     estimations.forEach((est) => {
-      console.log(`\nIssue #${est.issueNumber}: ${est.title}`);
-      console.log(`  Complexity: ${est.complexity}`);
-      console.log(`  Estimated Cost: $${est.estimatedCost}`);
-      console.log(`  Labels: ${est.labels.join(', ') || 'None'}`);
-      console.log(`  Reasoning: ${est.reasoning}`);
-      console.log(`  URL: ${est.url}`);
+      logger.debug(
+        {
+          issueNumber: est.issueNumber,
+          title: est.title,
+          complexity: est.complexity,
+          estimatedCost: est.estimatedCost,
+          labels: est.labels,
+          url: est.url,
+          reasoning: est.reasoning,
+        },
+        'Issue estimation detail'
+      );
     });
 
     // Generate CSV content
@@ -344,7 +343,7 @@ export async function POST(request: Request) {
       message: `Processed and estimated ${estimations.length} issues. Total estimated cost: $${totalCost.toFixed(2)}`,
     });
   } catch (error: unknown) {
-    console.error('Error fetching issues:', error);
+    logger.error({ error }, 'Error fetching and estimating issues');
     return NextResponse.json(
       {
         error:
