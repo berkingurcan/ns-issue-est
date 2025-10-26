@@ -135,10 +135,10 @@ export default function Home() {
                 </span>
                 <div className="mt-2 flex gap-3">
                   <input
-                    type="url"
+                    type="text"
                     value={repoLink}
                     onChange={(e) => setRepoLink(e.target.value)}
-                    placeholder="https://github.com/username/repository"
+                    placeholder="github.com/username/repository"
                     className="flex-1 px-4 py-3 bg-white border border-black focus:outline-none focus:ring-2 focus:ring-black text-black placeholder-gray-400"
                   />
                   <button
@@ -170,10 +170,10 @@ export default function Home() {
                 </span>
                 <div className="mt-2 flex gap-3">
                   <input
-                    type="url"
+                    type="text"
                     value={issueLink}
                     onChange={(e) => setIssueLink(e.target.value)}
-                    placeholder="https://github.com/username/repository/issues/123"
+                    placeholder="github.com/username/repository/issues/123"
                     className="flex-1 px-4 py-3 bg-white border border-black focus:outline-none focus:ring-2 focus:ring-black text-black placeholder-gray-400"
                   />
                   <button
