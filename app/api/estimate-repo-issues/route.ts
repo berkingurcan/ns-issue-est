@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     );
 
     // Step 4: Format data for LLM estimation and write to files
-    console.log('\n=== STEP 4: Formatting Data for LLM ===');
+    console.log('\n===Formatting Data for LLM ===');
     enrichedIssues.forEach((issue, index) => {
       console.log(`\n--- Issue #${issue.number} LLM Input Format ---`);
       const llmPromptData = formatFullLLMPromptData(repoContext, issue);
