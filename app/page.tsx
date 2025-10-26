@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 export default function Home() {
-  const [repoLink, setRepoLink] = useState("");
-  const [issueLink, setIssueLink] = useState("");
-  const [minBudget, setMinBudget] = useState("");
-  const [maxBudget, setMaxBudget] = useState("");
-  const [selectedModel, setSelectedModel] = useState("gpt-5-nano");
+  const [repoLink, setRepoLink] = useState('');
+  const [issueLink, setIssueLink] = useState('');
+  const [minBudget, setMinBudget] = useState('');
+  const [maxBudget, setMaxBudget] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gpt-5-nano');
 
   const handleRepoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Repository Link:", repoLink);
-    console.log("Budget Range:", { min: minBudget, max: maxBudget });
-    console.log("Selected Model:", selectedModel);
+    console.log('Repository Link:', repoLink);
+    console.log('Budget Range:', { min: minBudget, max: maxBudget });
+    console.log('Selected Model:', selectedModel);
 
     try {
       const response = await fetch('/api/estimate-repo-issues', {
@@ -44,9 +44,9 @@ export default function Home() {
 
   const handleIssueSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Issue Link:", issueLink);
-    console.log("Budget Range:", { min: minBudget, max: maxBudget });
-    console.log("Selected Model:", selectedModel);
+    console.log('Issue Link:', issueLink);
+    console.log('Budget Range:', { min: minBudget, max: maxBudget });
+    console.log('Selected Model:', selectedModel);
     // Add your submit logic here
   };
 
@@ -55,9 +55,7 @@ export default function Home() {
       <main className="w-full max-w-2xl">
         <div className="border border-black p-8 space-y-8">
           <div className="text-center space-y-2">
-            <h1 className="text-4xl font-bold text-black">
-              GitHub Analyzer
-            </h1>
+            <h1 className="text-4xl font-bold text-black">GitHub Analyzer</h1>
             <p className="text-gray-700">
               Enter a repository or issue link to get started
             </p>

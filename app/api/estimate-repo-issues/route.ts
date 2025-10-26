@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { parseGitHubRepoUrl, fetchAllOpenIssues } from '@/app/_lib/services/github';
+import {
+  parseGitHubRepoUrl,
+  fetchAllOpenIssues,
+} from '@/app/_lib/services/github';
 
 export async function POST(request: Request) {
   try {
@@ -30,11 +33,13 @@ export async function POST(request: Request) {
       totalIssues: allIssues.length,
       issues: allIssues,
     });
-
   } catch (error: unknown) {
     console.error('Error fetching issues:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch issues' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch issues',
+      },
       { status: 500 }
     );
   }
