@@ -9,12 +9,37 @@ export default function Home() {
   const [maxBudget, setMaxBudget] = useState("");
   const [selectedModel, setSelectedModel] = useState("gpt-5-nano");
 
-  const handleRepoSubmit = (e: React.FormEvent) => {
+  const handleRepoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Repository Link:", repoLink);
     console.log("Budget Range:", { min: minBudget, max: maxBudget });
     console.log("Selected Model:", selectedModel);
-    // Add your submit logic here
+
+    try {
+      const response = await fetch('/api/estimate-repo-issues', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          repoLink,
+          minBudget,
+          maxBudget,
+          selectedModel,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log(`Successfully fetched ${data.totalIssues} issues`);
+        console.log('Issues data:', data.issues);
+      } else {
+        console.error('Error:', data.error);
+      }
+    } catch (error) {
+      console.error('Failed to fetch issues:', error);
+    }
   };
 
   const handleIssueSubmit = (e: React.FormEvent) => {
