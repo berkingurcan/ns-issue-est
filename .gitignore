@@ -46,3 +46,6 @@ IMPLEMENTATION_PLAN.md
 
 # LLM output files
 /llm-outputs/
+
+# AI estimation results
+/estimation-results/

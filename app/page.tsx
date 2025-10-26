@@ -23,9 +23,9 @@ export default function Home() {
         },
         body: JSON.stringify({
           repoLink,
-          minBudget,
-          maxBudget,
-          selectedModel,
+          minBudget: minBudget ? Number(minBudget) : undefined,
+          maxBudget: maxBudget ? Number(maxBudget) : undefined,
+          model: selectedModel,
         }),
       });
 
