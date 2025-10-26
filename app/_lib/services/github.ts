@@ -58,7 +58,7 @@ export async function fetchAllOpenIssues(owner: string, repo: string) {
     const issues = response.data;
 
     // Filter out pull requests (GitHub API returns both issues and PRs)
-    const actualIssues = issues.filter((issue: any) => !issue.pull_request);
+    const actualIssues = issues.filter((issue) => !('pull_request' in issue));
 
     allIssues.push(...actualIssues);
 

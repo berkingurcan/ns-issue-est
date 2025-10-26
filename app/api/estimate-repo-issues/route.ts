@@ -31,10 +31,10 @@ export async function POST(request: Request) {
       issues: allIssues,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching issues:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch issues' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch issues' },
       { status: 500 }
     );
   }
