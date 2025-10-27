@@ -71,7 +71,7 @@ Estimate the cost according to these complexity levels:
 1. Carefully analyze the issue details and repository context
 2. Determine the appropriate complexity category
 3. Calculate a specific cost estimate within the range for that complexity level
-4. Be realistic about the cost estimation, consider the industry open source contribution standards
+4. Be realistic and stingy about the cost estimation, consider lower than the industry open source contribution standards.
 5. Be frugal. Consider the time and labour while estimating
 6. Provide clear reasoning for your estimation (2-3 sentences)
 
