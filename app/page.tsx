@@ -59,77 +59,90 @@ export default function Home() {
     addLog(`> BUDGET RANGE: $${minBudget || lowMin} - $${maxBudget || criticalMax}`);
 
     try {
-      const response = await fetch('/api/estimate-repo-issues', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          repoLink,
-          minBudget: minBudget ? Number(minBudget) : undefined,
-          maxBudget: maxBudget ? Number(maxBudget) : undefined,
-          model: selectedModel,
-          lowMin: lowMin ? Number(lowMin) : undefined,
-          lowMax: lowMax ? Number(lowMax) : undefined,
-          mediumMin: mediumMin ? Number(mediumMin) : undefined,
-          mediumMax: mediumMax ? Number(mediumMax) : undefined,
-          highMin: highMin ? Number(highMin) : undefined,
-          highMax: highMax ? Number(highMax) : undefined,
-          criticalMin: criticalMin ? Number(criticalMin) : undefined,
-          criticalMax: criticalMax ? Number(criticalMax) : undefined,
-          stream: true,
-        }),
-      });
+      const allEstimations: any[] = [];
+      let startIndex = 0;
+      const batchSize = 15; // Process 15 issues at a time
+      let isComplete = false;
+      let totalIssues = 0;
+      let repoOwner = '';
+      let repoRepo = '';
 
-      if (!response.ok) {
-        throw new Error('Failed to start estimation');
-      }
+      addLog('> STARTING BATCH PROCESSING...');
 
-      // Handle streaming response
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
+      while (!isComplete) {
+        addLog(`> PROCESSING BATCH (STARTING AT ISSUE ${startIndex + 1})...`);
 
-      if (!reader) {
-        throw new Error('No response body');
-      }
+        const response = await fetch('/api/estimate-repo-batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            repoLink,
+            minBudget: minBudget ? Number(minBudget) : undefined,
+            maxBudget: maxBudget ? Number(maxBudget) : undefined,
+            model: selectedModel,
+            lowMin: lowMin ? Number(lowMin) : undefined,
+            lowMax: lowMax ? Number(lowMax) : undefined,
+            mediumMin: mediumMin ? Number(mediumMin) : undefined,
+            mediumMax: mediumMax ? Number(mediumMax) : undefined,
+            highMin: highMin ? Number(highMin) : undefined,
+            highMax: highMax ? Number(highMax) : undefined,
+            criticalMin: criticalMin ? Number(criticalMin) : undefined,
+            criticalMax: criticalMax ? Number(criticalMax) : undefined,
+            startIndex,
+            batchSize,
+          }),
+        });
 
-      let buffer = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        if (!response.ok) {
+          throw new Error('Failed to process batch');
+        }
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
+        const data = await response.json();
 
-        // Keep the last incomplete line in the buffer
-        buffer = lines.pop() || '';
+        totalIssues = data.totalIssues;
+        repoOwner = data.repository.owner;
+        repoRepo = data.repository.repo;
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
+        allEstimations.push(...data.estimations);
 
-              if (data.type === 'log') {
-                addLog(data.message);
-              } else if (data.type === 'complete') {
-                addLog(data.message);
-                setCsvContent(data.data.csvContent);
-                setRepoName(`${data.data.repository.owner}_${data.data.repository.repo}`);
-              } else if (data.type === 'error') {
-                addLog(`> ERROR: ${data.message.toUpperCase()}`);
-                alert(`Error: ${data.message}`);
-              }
-            } catch (e) {
-              console.error('Error parsing SSE:', e, 'Line:', line.slice(0, 100));
-            }
-          }
+        const processed = startIndex + data.processedCount;
+        addLog(`> BATCH COMPLETE: ${processed}/${totalIssues} ISSUES PROCESSED`);
+
+        isComplete = data.isComplete;
+        if (!isComplete) {
+          startIndex = data.nextStartIndex;
         }
       }
+
+      // Calculate totals
+      const totalCost = allEstimations.reduce((sum, est) => sum + est.estimatedCost, 0);
+      const avgCost = totalCost / allEstimations.length;
+
+      addLog('> ALL BATCHES COMPLETE');
+      addLog(`> TOTAL COST: $${totalCost.toFixed(2)}`);
+      addLog(`> AVG COST: $${avgCost.toFixed(2)}`);
+      addLog('> GENERATING CSV...');
+
+      // Generate CSV from all estimations
+      const csvHeader = 'Issue Number,Title,Complexity,Estimated Cost,Labels,URL,Reasoning\n';
+      const csvRows = allEstimations.map((est) => {
+        const title = `"${est.title.replace(/"/g, '""')}"`;
+        const reasoning = `"${est.reasoning.replace(/"/g, '""')}"`;
+        const labels = `"${est.labels.join(', ')}"`;
+        return `${est.issueNumber},${title},${est.complexity},${est.estimatedCost},${labels},${est.url},${reasoning}`;
+      }).join('\n');
+      const csv = csvHeader + csvRows;
+
+      setCsvContent(csv);
+      setRepoName(`${repoOwner}_${repoRepo}`);
+      addLog('> READY FOR DOWNLOAD');
 
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch issues:', error);
-      addLog('> FATAL ERROR: CONNECTION FAILED');
+      addLog('> FATAL ERROR: ' + (error instanceof Error ? error.message.toUpperCase() : 'CONNECTION FAILED'));
       alert('Failed to fetch and estimate issues. Please try again.');
       setIsLoading(false);
     }
