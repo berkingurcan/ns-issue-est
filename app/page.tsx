@@ -93,12 +93,16 @@ export default function Home() {
         throw new Error('No response body');
       }
 
+      let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+
+        // Keep the last incomplete line in the buffer
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -116,7 +120,7 @@ export default function Home() {
                 alert(`Error: ${data.message}`);
               }
             } catch (e) {
-              console.error('Error parsing SSE:', e);
+              console.error('Error parsing SSE:', e, 'Line:', line.slice(0, 100));
             }
           }
         }
